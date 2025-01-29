@@ -5,7 +5,11 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
+<<<<<<< HEAD
 		<version>3.2.1</version>
+=======
+		<version>3.4.0</version>
+>>>>>>> b2a8190 (start-project-DS)
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.graduation-project</groupId>
@@ -27,7 +31,11 @@
 		<url/>
 	</scm>
 	<properties>
+<<<<<<< HEAD
 		<java.version>23</java.version>
+=======
+		<java.version>17</java.version>
+>>>>>>> b2a8190 (start-project-DS)
 	</properties>
 	<dependencies>
 		<dependency>
@@ -36,6 +44,22 @@
 		</dependency>
 
 		<dependency>
+<<<<<<< HEAD
+=======
+			<groupId>com.itextpdf</groupId>
+			<artifactId>itext7-core</artifactId>
+			<version>7.1.1</version>
+			<type>pom</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk18on</artifactId>
+			<version>1.78</version>
+		</dependency>
+
+		<dependency>
+>>>>>>> b2a8190 (start-project-DS)
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
@@ -47,6 +71,14 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
+<<<<<<< HEAD
+=======
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+>>>>>>> b2a8190 (start-project-DS)
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
