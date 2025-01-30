@@ -7,11 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.KeyStore;
+import java.security.*;
 
 @Service
 public class PdfService {
@@ -30,18 +27,21 @@ public class PdfService {
             PdfWriter writer = new PdfWriter(pdfOutput);
             PdfDocument pdfDocument = new PdfDocument(reader, writer, new StampingProperties().useAppendMode());
 
-            PdfSigner signer = new PdfSigner(reader, pdfOutput, true);
+            // ใช้ StampingProperties เพื่อกำหนดคุณสมบัติการเซ็น
+            StampingProperties properties = new StampingProperties().useAppendMode(); // กำหนดเป็น append mode
 
-            // ✅ โหลด PrivateKey และ Certificate จาก KeyStore
+            // สร้าง PdfSigner โดยใช้ PdfReader, OutputStream, และ StampingProperties
+            PdfSigner signer = new PdfSigner(reader, pdfOutput, properties);
+
+            // ใช้คีย์และ Certificate แบบไม่ต้องยืนยันตอนนี้
             KeyStore ks = KeyStore.getInstance("PKCS12");
-            try (FileInputStream fis = new FileInputStream("keystore.p12")) {
-                ks.load(fis, "password".toCharArray());
+            try (FileInputStream fis = new FileInputStream("src/main/resources/new_keystore.p12")) {
+                ks.load(fis, "123456".toCharArray());
             }
             String alias = ks.aliases().nextElement();
-            PrivateKey privateKey = (PrivateKey) ks.getKey(alias, "password".toCharArray());
+            PrivateKey privateKey = (PrivateKey) ks.getKey(alias, "123456".toCharArray());
             Certificate[] chain = ks.getCertificateChain(alias);
 
-            // ✅ ใช้ PrivateKeySignature และ BouncyCastleDigest
             IExternalSignature pks = new PrivateKeySignature(privateKey, DigestAlgorithms.SHA256, "BC");
             IExternalDigest digest = new BouncyCastleDigest();
 
@@ -51,5 +51,14 @@ public class PdfService {
         }
 
         return signedPdfPath;
+    }
+
+    public byte[] getFileBytes(String filePath) throws IOException {
+        File file = new File(filePath);
+        byte[] bytes = new byte[(int) file.length()];
+        try (InputStream is = new FileInputStream(file)) {
+            is.read(bytes);
+        }
+        return bytes;
     }
 }
