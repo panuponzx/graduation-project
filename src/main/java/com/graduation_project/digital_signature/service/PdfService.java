@@ -7,58 +7,74 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
-import java.security.*;
+import java.security.Security;
 
 @Service
 public class PdfService {
 
+    // Keystore details
+    private static final String KEYSTORE_PATH = "new_keystore.p12"; // Keystore file path (located in resources)
+    private static final String KEYSTORE_PASSWORD = "123456"; // Keystore password
+    private static final String KEY_ALIAS = "myalias"; // Alias of the Private Key
+    private static final String KEY_PASSWORD = "123456"; // Password of the Private Key
+
     static {
+        // Register Bouncy Castle provider
         Security.addProvider(new BouncyCastleProvider());
     }
 
     public String signPdf(MultipartFile file) throws Exception {
-        String signedPdfPath = "signed_" + file.getOriginalFilename();
+        // Read the PDF file from MultipartFile
+        InputStream pdfInputStream = file.getInputStream();
+        PdfReader reader = new PdfReader(pdfInputStream);
 
-        try (InputStream pdfInput = file.getInputStream();
-             OutputStream pdfOutput = new FileOutputStream(signedPdfPath)) {
+        // Create a temporary file for the signed PDF
+        File tempFile = File.createTempFile("signed_", ".pdf");
+        OutputStream signedPdfOutputStream = new FileOutputStream(tempFile);
 
-            PdfReader reader = new PdfReader(pdfInput);
-            PdfWriter writer = new PdfWriter(pdfOutput);
-            PdfDocument pdfDocument = new PdfDocument(reader, writer, new StampingProperties().useAppendMode());
+        // Create PdfSigner in append mode (false = create a new document)
+        PdfSigner signer = new PdfSigner(reader, signedPdfOutputStream, new StampingProperties().useAppendMode());
+        // Load Keystore from resources
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        InputStream keystoreStream = getClass().getClassLoader().getResourceAsStream(KEYSTORE_PATH);
+        if (keystoreStream == null) {
+            throw new FileNotFoundException("Keystore file not found in resources: " + KEYSTORE_PATH);
+        }
+        keyStore.load(keystoreStream, KEYSTORE_PASSWORD.toCharArray());
 
-            // ใช้ StampingProperties เพื่อกำหนดคุณสมบัติการเซ็น
-            StampingProperties properties = new StampingProperties().useAppendMode(); // กำหนดเป็น append mode
-
-            // สร้าง PdfSigner โดยใช้ PdfReader, OutputStream, และ StampingProperties
-            PdfSigner signer = new PdfSigner(reader, pdfOutput, properties);
-
-            // ใช้คีย์และ Certificate แบบไม่ต้องยืนยันตอนนี้
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            try (FileInputStream fis = new FileInputStream("src/main/resources/new_keystore.p12")) {
-                ks.load(fis, "123456".toCharArray());
-            }
-            String alias = ks.aliases().nextElement();
-            PrivateKey privateKey = (PrivateKey) ks.getKey(alias, "123456".toCharArray());
-            Certificate[] chain = ks.getCertificateChain(alias);
-
-            IExternalSignature pks = new PrivateKeySignature(privateKey, DigestAlgorithms.SHA256, "BC");
-            IExternalDigest digest = new BouncyCastleDigest();
-
-            signer.signDetached(digest, pks, chain, null, null, null, 0, PdfSigner.CryptoStandard.CMS);
-
-            pdfDocument.close();
+        // Retrieve Private Key and Certificate Chain from keystore
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(KEY_ALIAS, KEY_PASSWORD.toCharArray());
+        Certificate[] chain = keyStore.getCertificateChain(KEY_ALIAS);
+        if (chain == null || chain.length == 0) {
+            throw new Exception("No certificate found with alias: " + KEY_ALIAS);
         }
 
-        return signedPdfPath;
+        // Configure the signature with SHA-384 and RSA
+        IExternalSignature pks = new PrivateKeySignature(privateKey, "SHA-384", "BC");
+        IExternalDigest digest = new BouncyCastleDigest();
+
+        // Set signature appearance
+        PdfSignatureAppearance appearance = signer.getSignatureAppearance();
+        appearance.setReason("Document signed by User")
+                .setLocation("Thailand")
+                .setPageNumber(1)
+                .setCertificate(chain[0]);
+
+        // Sign the PDF (use the entire certificate chain)
+        signer.signDetached(digest, pks, chain, null, null, null, 0, PdfSigner.CryptoStandard.CMS);
+
+        // Close the PdfSigner and OutputStream (PdfSigner will close PdfDocument automatically)
+        return tempFile.getAbsolutePath();  // Return the path of the signed PDF
     }
 
+    // Function to retrieve byte array of the signed file
     public byte[] getFileBytes(String filePath) throws IOException {
-        File file = new File(filePath);
-        byte[] bytes = new byte[(int) file.length()];
-        try (InputStream is = new FileInputStream(file)) {
-            is.read(bytes);
-        }
-        return bytes;
+        FileInputStream fileInputStream = new FileInputStream(filePath);
+        byte[] fileBytes = fileInputStream.readAllBytes();
+        fileInputStream.close();
+        return fileBytes;
     }
 }
