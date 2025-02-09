@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/pdf")
+@CrossOrigin(origins = "*") //  all domain
 public class PdfFileController {
 
     @Autowired
@@ -44,7 +45,7 @@ public class PdfFileController {
     public ResponseEntity<byte[]> getPdfFile(@PathVariable("id") Long id) {
         return pdfFileService.getPdfFileById(id)
                 .map(pdfFile -> ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + pdfFile.getFilename())
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + pdfFile.getFilename())
                         .contentType(MediaType.APPLICATION_PDF)
                         .body(pdfFile.getContent()))
                 .orElse(ResponseEntity.notFound().build());
