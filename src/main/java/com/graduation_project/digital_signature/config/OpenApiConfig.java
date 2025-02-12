@@ -16,7 +16,7 @@ public class OpenApiConfig {
                 .info(new Info().title("Digital Signature API")
                         .description("API สำหรับออกเอกสารและเซ็นต์เอกสาร PDF")
                         .version("v1.0.0")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")))
+                        .license(new License().name("Apache 2.0").url("http:/ls target/*.jar/springdoc.org")))
                 .externalDocs(new ExternalDocumentation()
                         .description("ข้อมูลเพิ่มเติม")
                         .url("https://www.example.com"));

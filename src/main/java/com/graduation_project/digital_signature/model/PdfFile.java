@@ -4,14 +4,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
 @Table(name = "pdf_files")
 public class PdfFile {
 
+    // Getters
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,20 +40,4 @@ public class PdfFile {
         this.uploadedAt = LocalDateTime.now();
     }
 
-    // Getters
-    public Long getId() {
-        return id;
-    }
-
-    public String getFilename() {
-        return filename;
-    }
-
-    public byte[] getContent() {
-        return content;
-    }
-
-    public LocalDateTime getUploadedAt() {
-        return uploadedAt;
-    }
 }

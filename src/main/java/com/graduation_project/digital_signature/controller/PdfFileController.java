@@ -10,8 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @RestController
-@RequestMapping("/api/pdf")
+@RequestMapping("/select/pdf")
 @CrossOrigin(origins = "*") //  all domain
 public class PdfFileController {
 
@@ -24,10 +26,11 @@ public class PdfFileController {
     // API สำหรับอัปโหลดไฟล์ PDF ลงในฐานข้อมูล
     @PostMapping("/upload")
     public ResponseEntity<String> uploadPdfFile(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+
         try {
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body("File is empty");
-            }
             // แปลงไฟล์เป็น byte[]
             byte[] content = file.getBytes();
             // สร้าง entity สำหรับเก็บไฟล์ PDF
@@ -35,6 +38,9 @@ public class PdfFileController {
             // บันทึกลงฐานข้อมูล
             PdfFile savedFile = pdfFileRepository.save(pdfFile);
             return ResponseEntity.ok("File uploaded successfully with ID: " + savedFile.getId());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error reading file: " + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error uploading file: " + e.getMessage());
@@ -51,3 +57,5 @@ public class PdfFileController {
                 .orElse(ResponseEntity.notFound().build());
     }
 }
+
+
